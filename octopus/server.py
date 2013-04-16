@@ -1,6 +1,7 @@
 # Copyright (c) 2013, Hansel Dunlop.
 # License, see LICENSE for details
 
+import os
 import select
 import socket
 
@@ -39,7 +40,14 @@ class  AsyncSocketServer(object):
         else:
             address = binding_location
 
-        self.serversocket.bind(address)
+        try:
+            self.serversocket.bind(address)
+        except socket.error as exc:
+            if exc.errno == 97:
+                os.unlink(address)
+                self.serversocket.bind(address)
+            elif:
+                raise
         self.serversocket.listen(self.BACKLOG)
         self.epoll.register(self.serversocket.fileno(), select.EPOLLIN)
 

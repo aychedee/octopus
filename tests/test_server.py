@@ -1,10 +1,15 @@
 from mock import call, Mock, patch
 import os
 import select
-import socket
 import shutil
+import socket
+import sys
 import tempfile
 import unittest
+
+PATH = os.path.dirname(os.path.dirname(__file__))
+if PATH not in sys.path:
+    sys.path.append(PATH)
 
 from octopus import AsyncSocketServer
 
@@ -112,6 +117,16 @@ class AsyncSocketServerTest(unittest.TestCase):
             IOError, self.s.epoll.register, fd, select.EPOLLIN
         )
 
+    def test_listen_with_unix_socket_handles_existing_file(self):
+        self.s = AsyncSocketServer(self.ConnectionClass, family=socket.AF_UNIX)
+        uds_socket_path = os.path.join(self.temp_dir, 'uds_socket')
+        previous_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        previous_socket.bind(uds_socket_path)
+
+        # doesn't raise
+        self.s.listen(uds_socket_path)
+
+
 
     @patch('octopus.AsyncSocketServer.route_raw_event')
     def test_start(self, mock_route_raw_event):
@@ -187,3 +202,6 @@ class AsyncSocketServerTest(unittest.TestCase):
             mock_connection._socket.recv.call_args_list,
             [call(self.s.READ_SIZE)]
         )
+
+if __name__ == '__main__':
+    unittest.main()

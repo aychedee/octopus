@@ -46,7 +46,7 @@ class  AsyncSocketServer(object):
             if exc.errno == 97:
                 os.unlink(address)
                 self.serversocket.bind(address)
-            elif:
+            else:
                 raise
         self.serversocket.listen(self.BACKLOG)
         self.epoll.register(self.serversocket.fileno(), select.EPOLLIN)

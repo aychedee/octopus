@@ -146,7 +146,7 @@ class AsyncSocketServerTest(unittest.TestCase):
         )
 
     @patch('octopus.AsyncSocketServer.handle_new_client_connection')
-    def test_route_event_from_serversocket(self, mock_handle_client_conn):
+    def test_route_EPOLLIN_event_from_serversocket(self, mock_handle_client_conn):
         self.s.serversocket = Mock()
 
         self.s.route_raw_event(self.s.server_fd, select.EPOLLIN)
@@ -154,12 +154,35 @@ class AsyncSocketServerTest(unittest.TestCase):
         self.assertTrue(mock_handle_client_conn.called)
 
     @patch('octopus.AsyncSocketServer.handle_input_from_client')
-    def test_route_event_from_client_socket(self, mock_handle_client_input):
+    def test_route_EPOLLIN_event_from_client_socket(self, mock_handle_client_input):
         self.s.serversocket = Mock()
 
         self.s.route_raw_event(9, select.EPOLLIN)
 
         self.assertEqual(mock_handle_client_input.call_args_list, [call(9)])
+
+    def test_handle_EPOLLHUP_event_on_connection(self):
+        self.s.serversocket = Mock()
+        self.s.epoll = Mock()
+
+        self.s.route_raw_event(11, select.EPOLLHUP)
+
+        self.assertEqual(
+            self.s.epoll.unregister.call_args_list, [call(11)]
+        )
+        self.assertTrue(self.s.active)
+
+    def test_handle_EPOLLHUP_event_on_server_socket(self):
+        self.s.serversocket = Mock()
+        self.s.epoll = Mock()
+        server_fd = self.s.server_fd
+
+        self.s.route_raw_event(server_fd, select.EPOLLHUP)
+
+        self.assertEqual(
+            self.s.epoll.unregister.call_args_list, [call(server_fd)]
+        )
+        self.assertFalse(self.s.active)
 
     def test_handle_new_client_connection(self):
         self.s.serversocket = Mock()
@@ -183,7 +206,8 @@ class AsyncSocketServerTest(unittest.TestCase):
         )
         self.assertFalse(mock_client_socket.blocking)
         self.assertEqual(
-            self.s.epoll.register.call_args_list, [call(7, select.EPOLLIN)]
+            self.s.epoll.register.call_args_list,
+            [call(7, select.EPOLLIN | select.EPOLLHUP)]
         )
         self.assertTrue(mock_connection_class.return_value.connect.called)
 

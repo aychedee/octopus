@@ -43,13 +43,16 @@ class  AsyncSocketServer(object):
         try:
             self.serversocket.bind(address)
         except socket.error as exc:
-            if exc.errno == 97:
+            if exc.errno == 98:
                 os.unlink(address)
                 self.serversocket.bind(address)
             else:
                 raise
         self.serversocket.listen(self.BACKLOG)
-        self.epoll.register(self.serversocket.fileno(), select.EPOLLIN)
+        self.epoll.register(
+            self.serversocket.fileno(),
+            select.EPOLLIN | select.EPOLLHUP
+        )
 
     def start(self):
         while True:
@@ -61,7 +64,11 @@ class  AsyncSocketServer(object):
                 break
 
     def route_raw_event(self, fd, event):
-        if fd == self.server_fd:
+        if event == select.EPOLLHUP:
+            self.epoll.unregister(fd)
+            if fd == self.server_fd:
+                self.active = False
+        elif fd == self.server_fd:
             self.handle_new_client_connection()
         else:
             self.handle_input_from_client(fd)
@@ -71,7 +78,9 @@ class  AsyncSocketServer(object):
         clientsocket.setblocking(0)
         connection = self._connection_type(clientsocket, address)
         self.CLIENT_SOCKETS[clientsocket.fileno()] = connection
-        self.epoll.register(clientsocket.fileno(), select.EPOLLIN)
+        self.epoll.register(clientsocket.fileno(),
+            select.EPOLLIN | select.EPOLLHUP
+        )
         connection.connect()
 
     def handle_input_from_client(self, fd):

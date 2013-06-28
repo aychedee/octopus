@@ -126,8 +126,6 @@ class AsyncSocketServerTest(unittest.TestCase):
         # doesn't raise
         self.s.listen(uds_socket_path)
 
-
-
     @patch('octopus.AsyncSocketServer.route_raw_event')
     def test_start(self, mock_route_raw_event):
         self.s.active = False
@@ -161,26 +159,43 @@ class AsyncSocketServerTest(unittest.TestCase):
 
         self.assertEqual(mock_handle_client_input.call_args_list, [call(9)])
 
-    def test_handle_EPOLLHUP_event_on_connection(self):
+    def test_route_EPOLLHUP_event_on_connection(self):
         self.s.serversocket = Mock()
         self.s.epoll = Mock()
+        self.s.CLIENT_SOCKETS[11] = Mock()
 
         self.s.route_raw_event(11, select.EPOLLHUP)
 
         self.assertEqual(
             self.s.epoll.unregister.call_args_list, [call(11)]
         )
-        self.assertTrue(self.s.active)
 
-    def test_handle_EPOLLHUP_event_on_server_socket(self):
+    def test_route_EPOLLHUP_event_on_server_socket(self):
         self.s.serversocket = Mock()
-        self.s.epoll = Mock()
+        self.s.stop = Mock()
         server_fd = self.s.server_fd
 
         self.s.route_raw_event(server_fd, select.EPOLLHUP)
 
+        self.assertTrue(self.s.stop.called)
+
+    def test_close_client_connection(self):
+        self.s.epoll = Mock()
+        self.s.CLIENT_SOCKETS[11] = Mock()
+
+        self.s.close_client_connection(11)
+
         self.assertEqual(
-            self.s.epoll.unregister.call_args_list, [call(server_fd)]
+            self.s.epoll.unregister.call_args_list, [call(11)]
+        )
+        self.assertTrue(self.s.CLIENT_SOCKETS[11].close.called)
+
+    def test_stop_server(self):
+        self.s.epoll = Mock()
+        self.s.stop()
+
+        self.assertEqual(
+            self.s.epoll.unregister.call_args_list, [call(self.s.server_fd)]
         )
         self.assertFalse(self.s.active)
 

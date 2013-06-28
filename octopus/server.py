@@ -20,6 +20,9 @@ class SocketConnection(object):
     def send(self, data):
         self._socket.send(data)
 
+    def close(self):
+        pass
+
 
 class  AsyncSocketServer(object):
 
@@ -63,11 +66,17 @@ class  AsyncSocketServer(object):
             if not self.active:
                 break
 
+    def stop(self):
+        self.epoll.unregister(self.server_fd)
+        self.active = False
+
     def route_raw_event(self, fd, event):
-        if event == select.EPOLLHUP:
-            self.epoll.unregister(fd)
+        if event & select.EPOLLHUP:
             if fd == self.server_fd:
-                self.active = False
+                self.stop()
+            else:
+                self.close_client_connection(fd)
+
         elif fd == self.server_fd:
             self.handle_new_client_connection()
         else:
@@ -86,3 +95,7 @@ class  AsyncSocketServer(object):
     def handle_input_from_client(self, fd):
         connection = self.CLIENT_SOCKETS[fd]
         connection.receive(connection._socket.recv(self.READ_SIZE))
+
+    def close_client_connection(self, fd):
+        self.epoll.unregister(fd)
+        self.CLIENT_SOCKETS[fd].close()

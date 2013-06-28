@@ -11,6 +11,10 @@ class SocketConnection(object):
         self._socket = socket
         self.address = address
 
+    def __unicode__(self):
+        return 'Client Connection from %s' % (self.address,)
+    __str__ = __unicode__
+
     def connect(self):
         pass
 
@@ -99,3 +103,4 @@ class  AsyncSocketServer(object):
     def close_client_connection(self, fd):
         self.epoll.unregister(fd)
         self.CLIENT_SOCKETS[fd].close()
+

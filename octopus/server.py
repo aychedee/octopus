@@ -50,7 +50,7 @@ class  AsyncSocketServer(object):
         try:
             self.serversocket.bind(address)
         except socket.error as exc:
-            if exc.errno == 98:
+            if exc.errno == os.errno.EADDRINUSE:
                 os.unlink(address)
                 self.serversocket.bind(address)
             else:

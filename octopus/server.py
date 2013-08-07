@@ -37,6 +37,9 @@ class  AsyncSocketServer(object):
         self._connection_type = connection_type
         self.active = True
         self.serversocket = socket.socket(family, socket.SOCK_STREAM)
+        self.serversocket.setsockopts(
+            socket.SOL_SOCKET,  socket.SO_REUSEADDR, 1
+        )
         self.serversocket.setblocking(0)
         self.server_fd = self.serversocket.fileno()
         self.epoll = select.epoll()

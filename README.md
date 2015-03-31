@@ -1,6 +1,8 @@
 Octopus
 =======
 
+[![Build Status](https://travis-ci.org/aychedee/octopus.svg?branch=master)](https://travis-ci.org/aychedee/octopus)
+
 Octopus is an asynchronous socket server for the linux environment
 
 It is ideal for providing local services over a Unix Domain Socket or to 

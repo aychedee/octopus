@@ -3,15 +3,10 @@ import os
 import select
 import shutil
 import socket
-import sys
 import tempfile
 import unittest
 
-PATH = os.path.dirname(os.path.dirname(__file__))
-if PATH not in sys.path:
-    sys.path.append(PATH)
-
-from octopus import AsyncSocketServer
+from ..server import AsyncSocketServer
 
 
 class MockSocket(object):

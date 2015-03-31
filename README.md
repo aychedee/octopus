@@ -3,7 +3,28 @@ Octopus
 
 [![Build Status](https://travis-ci.org/aychedee/octopus.svg?branch=master)](https://travis-ci.org/aychedee/octopus)
 
-Octopus is an asynchronous socket server for the linux environment
+Octopus is an asynchronous socket server for the linux environment and is built
+use EPOLL only.
+
+
+                        .-'   `'.
+                       /         \
+                       |         ;
+                       |         |           ___.--,
+              _.._     |0) ~ (0) |    _.---'`__.-( (_.
+       __.--'`_.. '.__.\    '--. \_.-' ,.--'`     `""`
+      ( ,.--'`   ',__ /./;   ;, '.__.'`    __
+     _`) )  .---.__.' / |   |\   \__..--""  "'"--.,_
+     `---' .'.''-._.-'`_./  /\ '.  \ _.-~~~````~~~-._`-.__.'
+           | |  .' _.-' |  |  \  \  '.               `~---`
+                \ \/ .'     \  \   '. '-._)
+                 \/ /        \  \    `=.__`~-.
+            jgs  / /\         `) )    / / `"".`\
+           , _.-'.'\ \        / /    ( (     / /
+            `--~`   ) )    .-'.'      '.'.  | (
+                   (/`    ( (`          ) )  '-;
+                    `      '-;         (-'
+
 
 It is ideal for providing local services over a Unix Domain Socket or to 
 anywhere using an inet socket.
@@ -14,7 +35,7 @@ application logic and routing.
 Code example: A server that echoes any message sent to it out to all open
 connections
 
-    from octopus import AsyncSocketServer, SocketConnection
+    from octopus import Octopus, SocketConnection
 
     class EchoConnection(SocketConnection):
         
@@ -31,7 +52,7 @@ connections
             self.connections.remove(self)
         
         if __main__ == '__main__':
-            server = AsyncSocketServer(EchoConnection)
+            server = Octopus(EchoConnection)
             server.listen(9876)
             server.start()
 

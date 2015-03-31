@@ -6,7 +6,7 @@ import socket
 import tempfile
 import unittest
 
-from ..server import AsyncSocketServer
+from ..server import Octopus
 
 
 class MockSocket(object):
@@ -27,7 +27,7 @@ class AsyncSocketServerTest(unittest.TestCase):
     ConnectionClass = type('ConnectionClass', (object,), {})
 
     def setUp(self):
-        self.s = AsyncSocketServer(self.ConnectionClass)
+        self.s = Octopus(self.ConnectionClass)
         self.temp_dir = tempfile.mkdtemp()
 
     def tearDown(self):
@@ -35,7 +35,7 @@ class AsyncSocketServerTest(unittest.TestCase):
 
     @patch('octopus.server.socket.socket')
     def test_init(self, mock_socket):
-        self.s = AsyncSocketServer(self.ConnectionClass)
+        self.s = Octopus(self.ConnectionClass)
 
         self.assertEqual(
             mock_socket.call_args_list,
@@ -50,7 +50,7 @@ class AsyncSocketServerTest(unittest.TestCase):
 
     @patch('octopus.server.socket.socket')
     def test_init_default_socket_type_can_be_overriden(self, mock_socket):
-        self.s = AsyncSocketServer(self.ConnectionClass, family=socket.AF_UNIX)
+        self.s = Octopus(self.ConnectionClass, family=socket.AF_UNIX)
 
         self.assertTrue(self.s.serversocket.family, socket.AF_UNIX)
         self.assertTrue(self.s._connection_type, self.ConnectionClass)
@@ -62,8 +62,8 @@ class AsyncSocketServerTest(unittest.TestCase):
     def test_client_socket_is_per_server_instance(self):
         ConnectionClass = type('ConnectionClass', (object,), {})
 
-        s1 = AsyncSocketServer(ConnectionClass)
-        s2 = AsyncSocketServer(ConnectionClass)
+        s1 = Octopus(ConnectionClass)
+        s2 = Octopus(ConnectionClass)
         s1.CLIENT_SOCKETS[2] = 'socket'
 
         self.assertNotIn(2, s2.CLIENT_SOCKETS)
@@ -91,7 +91,7 @@ class AsyncSocketServerTest(unittest.TestCase):
         )
 
     def test_listen_binds_to_uds_socket_for_af_unix_sockets(self):
-        self.s = AsyncSocketServer(self.ConnectionClass, family=socket.AF_UNIX)
+        self.s = Octopus(self.ConnectionClass, family=socket.AF_UNIX)
         uds_socket_path = os.path.join(self.temp_dir, 'uds_socket')
         fd = self.s.serversocket.fileno()
         # Need to stash the socket or it gets garbage collected next line
@@ -113,7 +113,7 @@ class AsyncSocketServerTest(unittest.TestCase):
         )
 
     def test_listen_with_unix_socket_handles_existing_file(self):
-        self.s = AsyncSocketServer(self.ConnectionClass, family=socket.AF_UNIX)
+        self.s = Octopus(self.ConnectionClass, family=socket.AF_UNIX)
         uds_socket_path = os.path.join(self.temp_dir, 'uds_socket')
         previous_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         previous_socket.bind(uds_socket_path)
@@ -121,7 +121,7 @@ class AsyncSocketServerTest(unittest.TestCase):
         # doesn't raise
         self.s.listen(uds_socket_path)
 
-    @patch('octopus.AsyncSocketServer.route_raw_event')
+    @patch('octopus.Octopus.route_raw_event')
     def test_start(self, mock_route_raw_event):
         self.s.active = False
         PORT = 9999
@@ -138,7 +138,7 @@ class AsyncSocketServerTest(unittest.TestCase):
             [call(self.s.server_fd, select.EPOLLIN)]
         )
 
-    @patch('octopus.AsyncSocketServer.handle_new_client_connection')
+    @patch('octopus.Octopus.handle_new_client_connection')
     def test_route_EPOLLIN_event_from_serversocket(self, mock_handle_client_conn):
         self.s.serversocket = Mock()
 
@@ -146,7 +146,7 @@ class AsyncSocketServerTest(unittest.TestCase):
 
         self.assertTrue(mock_handle_client_conn.called)
 
-    @patch('octopus.AsyncSocketServer.handle_input_from_client')
+    @patch('octopus.Octopus.handle_input_from_client')
     def test_route_EPOLLIN_event_from_client_socket(self, mock_handle_client_input):
         self.s.serversocket = Mock()
 

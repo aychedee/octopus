@@ -28,7 +28,7 @@ class SocketConnection(object):
         pass
 
 
-class  AsyncSocketServer(object):
+class  Octopus(object):
 
     def __init__(self, connection_type, family=socket.AF_INET):
         self.CLIENT_SOCKETS = {}
